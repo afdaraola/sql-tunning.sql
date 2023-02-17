@@ -1,0 +1,144 @@
+Here the general tips for sql performance tuning
+
+
+(1) First you must have all the required tools for sql tuning 
+(2) Read less data and be I/O efficient.
+(3) Use good Oracle indexes
+(4) Avoid sql which disable the usage of index
+
+            SQL that Disables Indexes
+            (a)Functions ( to_char(), to_date(), etc. )
+            Fix : move the function to the “constant/bind variable” side
+            (b) Type Casting
+            In SQL
+            where emp_no = 10 (emp_no is a varchar2)
+            In PL/SQL
+            where emp_no = v_emp_num (v_emp_num is a number)
+            Modifiers
+            and id + 0 = 111
+            and date + 1 = sysdate (try date = sysdate – 1)
+            Fix : Change it to avoid it
+ 
+(5) Always use bind variable in the application. If you dont use bind variable in oracle , 
+    the sql will be parsed every time and will impact the database performance.
+
+(6) UNION vs OR. Use UNION for queries with two clear execution paths; each returning a fairly small number of rows.
+        Don’t use union for queries that are likely to return a large number of rows since all rows need to be sorted and most of them will be discarded.
+        OR tends to disable the index
+        
+ (7) Use the accurate optimizer statistics on the table to get the optimal plan.
+ 
+ (8) If you are using function on expression on the condition,check if there is a function-based index on that column. 
+      If it is not present the index will not be used
+      
+ (9) Use exists vs in and Non exists vs not in for correlated subqueries
+ 
+ (10) Avoid Poor coding practices
+          Some Tips
+          (a) Avoid Cartesian join . Make sure all the tables required in the queries are needed and are linked to each other
+          (b) Use Decode to avoid multiple trips to database
+          (c) Try to avoid outer join
+          (d) Sometimes decomposing the logic into small parts makes the work faster
+          
+  (11) If trying to use the complex view,check if the base tables can be used instead as the view tends to make the performance bad
+  
+  (12) Use UNION ALL Vs UNION if you knows that data retrieved will not have duplicate rows
+  
+  
+  ( 13) Use hints to optimize the execution plan. Sometimes hint can be used to change the execution plan for the query so as to take the most optimal path.
+Some times bind peeking create a bad plan ,so in that case putting necessary hint to fix the plan help in getting the good performance every time
+            The most common hints are
+            /*+ LEADING (table alias) */ specifies table by which to start join
+            /*+ FIRST_ROWS */ very good for on-line screens – favors NESTED LOOPS
+            /*+ INDEX ( table alias.index name) */ specifies index you want to use. Note: if index gets dropped and recreated and name changes then hint is no longer valid.
+            /*+ USE_NL (table alias1 table alias 2)*/ asks optimizer to use the Nested Loop Join for the two tables specified
+            
+            ******Avoid unnecessary optimizer hint and use them with care
+            
+      
+      
+ 
+
+You can find hint name from the view   v$sql_hint
+
+Some of the commonly used hint
+
+
+          SELECT /*+ ALL_ROWS */ user_name, sal FROM championship;
+
+          Example
+
+          SELECT /*+ ALL_ROWS */ user_name, salary, job_id FROM championship WHERE id = 12;
+          
+This is a statement-level hint. This hints  the optimizer to choose the plan that most effectively returns the result set at the minimum cost
+
+      SELECT /*+ FIRST_ROWS */ * FROM championship;
+
+      Example
+      SELECT /*+ FIRST_ROWS(10) */ user_name, salary FROM championship WHERE id = 50;
+      
+This is a statement-level hint. This hint instructs the optimizer to select a plan that returns the first rows most efficiently.
+      
+          SELECT /*+ FIRST_20_ROWS */ * FROM championship;
+          
+This is a statement-level hint. This hint instructs the optimizer to select a plan that returns the first 20 rows most efficiently.
+
+      /*+INDEX(Index name) */
+      
+INDEX(<table name>.< index_name>): Instructs the optimizer to specifically use the named index in determining a plan.
+This is an access path Hint
+
+
+         /*+ NO_INDEX((Index name) */
+
+NO_INDEX(<table_name> < index_name>): Instructs the optimizer to specifically not use the named index in determining a plan.
+
+Other Index related hints are
+
+        /*+INDEX_JOIN(emp index1, index2)*/ 
+        /*+INDEX_COMBINE(emp bitmap1, bitmap2)*/ 
+        /*+AND_EQUAL(emp index1, index2,…)*/
+        /*+ dynamic_sampling(A 3) */
+
+  /*+ LEADING(table_name)*/
+
+This hint tells Oracle to use the take table as the first in the join order. The optimizer will consequently select a joined chain that starts with this table. This is a join order hint
+
+  /*+ USE_NL(table table) */
+
+SELECT /*+ USE_NL(l h) */ h.customer_id, l.unit_price * l.quantity FROM orders h ,order_items l WHERE l.order_id = h.order_id;
+
+This hints optimizer to use Nested Loop join the specified tables. This is join operation hint
+
+
+
+   /*+ USE_MERGE(table table) */
+
+This hints optimizer to use Merge join the specified tables. This is join operation hint
+
+   /*+ USE_HASH(table table) */
+
+SELECT /*+ USE_HASH(l h) */ * FROM orders h, order_items l WHERE l.order_id = h.order_id AND l.order_id > 3500;
+
+This hints optimizer to use hash join the specified tables. This is join operation hint
+
+      PARALLEL (table n)
+
+SELECT /*+ FULL(a) PARALLEL(a, 2) */ last_name FROM employees a;
+
+This hint tells the optimizer to use n concurrent servers for a parallel operation.
+
+
+       APPEND
+This hint instructs the optimizer to carry out a direct-path insert. This may make INSERT … SELECT statements faster 
+because inserted data is simply appended to the end of the table and any referential constraints are ignored.
+
+
+Important points about HINT usage
+      It is no recommended to use Hints as such and it should be avoided  as with patches and upgrade, 
+         hint may generate sub-optimal plan and degrade the performance
+      Hint syntax should be used carefully else this will be ignored
+      Oracle ignores hints containing syntax errors, but considers other correctly specified hints within the same comment.
+
+
+            
