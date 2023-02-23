@@ -4,9 +4,11 @@ Partitioning logically splits up a table into smaller tables according to the pa
 
 There are three types of partitioning available:
 
-Range
-List
-Hash
+1. Range
+2. List
+3. Hash
+
+
 To create a partitioned table, you need to:
 
 Choose a partition method
