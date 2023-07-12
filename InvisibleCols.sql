@@ -10,3 +10,27 @@ You can not make system generated hidden columns visible.
 
 
 */
+
+
+DROP TABLE tab1 PURGE;
+
+CREATE TABLE tab1 (
+  a NUMBER,
+  b NUMBER,
+  c NUMBER INVISIBLE
+);
+
+COLUMN column_name FORMAT A15
+
+SELECT column_id,
+       column_name,
+       hidden_column
+FROM   user_tab_cols
+WHERE  table_name = 'TAB1'
+ORDER BY column_id;
+
+ COLUMN_ID COLUMN_NAME	   HID
+---------- --------------- ---
+	 1 A		   NO
+	 2 B		   NO
+	   C		   YES
